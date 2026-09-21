@@ -5,8 +5,6 @@ import math  # For Euclidean distance calculations
 
 base_options = mp.tasks.BaseOptions(model_asset_path='hand_landmarker.task')
 
-counter = 0
-
 options = mp.tasks.vision.HandLandmarkerOptions(
     base_options=base_options,
     num_hands=2,
@@ -27,10 +25,6 @@ print("Starting Optimized Tracker... Press 'q' to exit.")
 is_pinched = False       # True while a confirmed pinch is held
 pinch_frames = 0         # Consecutive frames below the pinch threshold
 pinch_start_time = 0     # Timestamp (ms) when the pinch was first confirmed
-
-# DOUBLE TAP state variables
-last_tap_time = 0        # Timestamp (ms) of the last successful tap release
-tap_count = 0            # Number of taps in the current sequence
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -118,25 +112,12 @@ while cap.isOpened():
 
         if pinch_ratio > 0.40:
             if is_pinched and (timestamp_ms - pinch_start_time) <= 300:
-                # A quick pinch-and-release (TAP) was completed
-                if (timestamp_ms - last_tap_time) <= 500:  # 500ms max between taps
-                    tap_count += 1
-                else:
-                    tap_count = 1
-                
-                last_tap_time = timestamp_ms
-                
-                if tap_count == 2:
-                    print('*** DOUBLE TAP detected! ***')
-                    tap_count = 0  # Reset after double tap
-                else:
-                    print('*** TAP detected! ***')
-                    
+                print('*** TAP detected! ***')
             is_pinched = False
             pinch_frames = 0
         # ──────────────────────────────────────────────────────────────────
 
-        # print(f"Pinch Ratio: {pinch_ratio:.4f}  (d_pinch={d_pinch:.4f}, s={s:.4f})")
+        print(f"Pinch Ratio: {pinch_ratio:.4f}  (d_pinch={d_pinch:.4f}, s={s:.4f})")
 
     cv2.imshow("Offline Hand Tracking", frame)
 
