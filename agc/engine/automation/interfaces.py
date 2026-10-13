@@ -21,6 +21,8 @@ class ForegroundInfo:
     title: str
     pid: int | None = None
     elevated: bool | None = None
+    #: ``(left, top, width, height)`` in physical screen pixels, if known.
+    rect: tuple[int, int, int, int] | None = None
 
 
 class ForegroundProbe(Protocol):

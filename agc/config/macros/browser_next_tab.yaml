@@ -1,0 +1,7 @@
+# FLICK_R in the browser profile: next tab.
+name: browser_next_tab
+description: Switch to the next browser tab.
+requires_foreground:
+  process: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe"]
+steps:
+  - hotkey: [ctrl, tab]

@@ -78,6 +78,20 @@ def sanitize_stem(stem: str) -> str:
     return cleaned
 
 
+def next_free_path(directory: Path, stem: str, suffix: str) -> Path:
+    """First ``stem[-n]suffix`` in ``directory`` that does not exist yet, without creating it.
+
+    For GUI macros that type a name into a Save dialog (a pre-created file would
+    trigger the app's "replace?" prompt). Not atomic: prefer :func:`reserve_unique`
+    whenever the caller writes the file itself.
+    """
+    for n in range(MAX_SUFFIX + 1):
+        path = directory / f"{stem}{'' if n == 0 else f'-{n}'}{suffix}"
+        if not path.exists():
+            return path
+    raise OutputPathError(f"too many files named {stem}{suffix} in {directory}")
+
+
 def reserve_unique(directory: Path, stem: str, suffix: str) -> Path:
     """Atomically create an empty ``stem[-n]suffix`` in ``directory`` and return its path."""
     for n in range(MAX_SUFFIX + 1):
