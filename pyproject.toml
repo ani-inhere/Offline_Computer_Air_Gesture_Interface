@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agc"
+version = "0.1.0"
+description = "Air Gesture Control: offline webcam hand-gesture control for laptops"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.5",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+windows = ["pywin32>=306; sys_platform == 'win32'"]
+gui = ["PyAutoGUI>=0.9.54", "opencv-python>=4.8"]
+vision = ["mediapipe>=0.10", "opencv-python>=4.8", "numpy>=1.24"]
+dev = ["pytest>=7.4", "hypothesis>=6.90"]
+
+[tool.setuptools.packages.find]
+include = ["agc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Live tests drive real apps; run them explicitly with `pytest -m word_live`.
+addopts = "-m 'not word_live'"
+markers = [
+    "word_live: drives a real Microsoft Word (Windows only); opt-in with -m word_live",
+]
+
+[tool.setuptools.package-data]
+agc = ["config/*.yaml"]

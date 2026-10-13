@@ -1,0 +1,22 @@
+# GUI fallback for word.export_pdf when Word COM is unavailable.
+# EXAMPLE: needs two templates captured on your own machine (theme, language and
+# DPI change how the dialog looks), e.g.:
+#   python -m agc.tools.capture_template word_save_as_dialog.png --delay 3
+#   python -m agc.tools.capture_template word_save_as_type.png --delay 3
+# Until they exist the macro stops at step 2 with "template ... not found".
+name: word_export_pdf_macro
+description: Export the active Word document to PDF through the Save As dialog.
+requires_foreground:
+  process: ["WINWORD.EXE"]
+steps:
+  - hotkey: [f12]                         # Save As dialog
+  - wait_for_image: word_save_as_dialog.png
+    timeout: 3
+  - click_image: word_save_as_type.png    # "Save as type" dropdown
+  - wait: 0.3
+  - type: "PDF"                           # jump to "PDF (*.pdf)" in the open list
+  - hotkey: [enter]
+  - hotkey: [alt, n]                      # focus "File name" (English UI)
+  - type:
+      output_path: { suffix: ".pdf", name_template: "agc_{timestamp}" }   # inside the allowed folder
+  - hotkey: [enter]
