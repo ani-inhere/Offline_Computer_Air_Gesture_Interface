@@ -18,5 +18,7 @@ Before coding, reply with a short plan (files, classes, threading diagram) and w
 
 - Automation backend flow, routing rules, phases and per-phase prompts: docs/agc-automation-backend-flow-and-prompts.md.
 - Existing code: Vision_test.py (MediaPipe hand-landmarker prototype, uses hand_landmarker.task). Treat it as vision code: do not modify.
-- docs/air-gesture-control-prd-trd-architecture.md is not in the repo yet. Until it is added, PRD IDs cited in the flow doc (CTX-5, CTX-6, ACT-7, FSM-5) are interpreted from that doc's descriptions.
-- Work branch: Anii_part (remote: github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface).
+- The engine pieces named in the PRD (FSM, mapper, profiles, IPC, ForegroundAdapter) do not exist yet. The automation package defines small Protocols for them in agc/engine/automation/interfaces.py; Phase 5 adds a minimal agc/engine/app.py with a fake 30 fps loop.
+- Tests run on Python 3.13 locally (only version installed); keep code 3.10-compatible (no 3.11+ syntax or stdlib APIs).
+- Run tests: `python -m pytest` from the repo root.
+- Work branch: Anii_part (remote: github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface). Commit and push there after each phase.
