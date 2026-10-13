@@ -1,0 +1,13 @@
+# Text snippets that gestures can insert into Word (op: insert_text, args.snippet_id).
+# Ids: letters, digits, '_' or '-'. Only {date} and {time} are filled in.
+snippets:
+  meeting_header: |
+    Meeting notes - {date}
+    Attendees:
+    Agenda:
+  action_items: |
+    Action items
+    - Owner:
+    - Due:
+  signature: |
+    Regards,

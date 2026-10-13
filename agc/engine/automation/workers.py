@@ -217,9 +217,10 @@ class BaseWorker:
         final = self._stop.is_set()
         for adapter in self._adapters:
             try:
-                adapter.thread_stopped()
+                # shutdown first: it may still need the thread's COM objects (e.g. to quit Word).
                 if final:
                     adapter.shutdown()
+                adapter.thread_stopped()
             except Exception:  # noqa: BLE001
                 log.exception("%s: adapter %s teardown failed", self.thread_name, adapter.name)
         try:

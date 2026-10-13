@@ -24,6 +24,11 @@ include = ["agc*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Live tests drive real apps; run them explicitly with `pytest -m word_live`.
+addopts = "-m 'not word_live'"
 markers = [
-    "word_live: needs Microsoft Word installed (Windows only); deselect with -m 'not word_live'",
+    "word_live: drives a real Microsoft Word (Windows only); opt-in with -m word_live",
 ]
+
+[tool.setuptools.package-data]
+agc = ["config/*.yaml"]
