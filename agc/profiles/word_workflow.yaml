@@ -1,0 +1,39 @@
+# Gesture -> action bindings, loaded by agc/engine/gesture_bridge.py.
+#
+# Gesture names are the events the vision loop (Vision_test.py) emits:
+#   TAP         quick thumb-index pinch and release (<= 300 ms)
+#   DOUBLE_TAP  two taps within 500 ms
+#   LONG_PINCH  pinch held for 800 ms
+#
+# `action` fields are ActionRequest fields (agc/engine/automation/models.py).
+# Word ops and their args are listed in docs/word_ops.md.
+#
+# Profile resolution: a profile with `match: { process: [...] }` wins while that
+# app is in the foreground; otherwise the profile without `match` is used.
+
+# WordConfig overrides (agc/engine/automation/adapters/word_com.py).
+word:
+  visible: true            # show a Word window that AGC starts itself, so you can see each gesture land
+
+profiles:
+  - id: word_workflow
+    bindings:
+      - gesture: DOUBLE_TAP
+        action: { type: app_api, app: word, op: new_document }
+
+      - gesture: TAP
+        action:
+          type: app_api
+          app: word
+          op: insert_text
+          args: { snippet_id: meeting_header }     # from agc/config/snippets.yaml
+
+      - gesture: LONG_PINCH
+        cooldown_s: 3.0                            # PDF export takes a moment; don't re-trigger
+        action:
+          type: app_api
+          app: word
+          op: export_pdf
+          args: { name_template: "agc_{timestamp}" }   # written to ~/Documents/AGC, never overwrites
+          timeout_s: 30
+
