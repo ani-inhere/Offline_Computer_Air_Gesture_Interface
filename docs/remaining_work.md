@@ -2,6 +2,11 @@
 
 Status as of 15 Oct 2026. Phases 0–3 of the automation backend are complete (see [project_guide.md](project_guide.md)). This file lists everything still to do, starting with the automation backend and then the rest of the PRD.
 
+Done since the first version of this list:
+- `agc/engine/gesture_bridge.py` and `agc/profiles/word_workflow.yaml` connect `Vision_test.py` gestures (TAP, DOUBLE_TAP, LONG_PINCH) to Word. This is a first version of the Phase 4 mapper and profile.
+- New PEACE_HOLD gesture opens a URL in Chrome ([browser_ops.md](browser_ops.md)).
+- `Anii_part` merged into `main`.
+
 ## 1. Automation backend: remaining phases
 
 Prompts for each phase are in [agc-automation-backend-flow-and-prompts.md](agc-automation-backend-flow-and-prompts.md).
@@ -75,10 +80,8 @@ Prompts for each phase are in [agc-automation-backend-flow-and-prompts.md](agc-a
 
 ## 3. Repository housekeeping
 
-- [ ] **Sync the branches.**
-  - `main` has the Tap/Double Tap code (PR #3) that `Anii_part` lacks.
-  - `Anii_part` has `gesture_tester.py` and the docs that `main` lacks.
-  - Merge `main` into `Anii_part`, then open a PR back to `main`.
+- [x] **Sync the branches.** `Anii_part` was merged into `main` on 15 Oct 2026; `main` is now the branch to work on.
+- [ ] **Install Google Chrome**, or set `browser: edge` / `default` in the profile; the dev machine has no Chrome.
 - [ ] **Delete `tempCodeRunnerFile.py`** (a VS Code Code Runner leftover on `main`) and add it to `.gitignore`.
 - [ ] **Remove the duplicate flow doc** from the repo root; the copy in `docs/` is the one to keep.
 - [ ] **Install MediaPipe** on the dev machine (`pip install mediapipe`) to run `Vision_test.py`; Phase 5 needs it.
@@ -90,7 +93,7 @@ Prompts for each phase are in [agc-automation-backend-flow-and-prompts.md](agc-a
 | Current code | PRD says |
 |---|---|
 | Double-tap gap 500 ms | 600 ms (B8.2) |
-| Emits `TAP` on the first tap and `DOUBLE_TAP` on the second, so both actions fire | `DOUBLE_TAP` should replace the first `TAP`; hold `TAP` until the double-tap window has passed |
+| ~~Emits `TAP` on the first tap and `DOUBLE_TAP` on the second~~ (**fixed on `main`**: `TAP` now waits for the double-tap window) | `DOUBLE_TAP` should replace the first `TAP` |
 | Hand scale `s` from 2D image landmarks | World landmarks (B3.4) |
 | `num_hands=2`; detection, presence and tracking confidence all 0.3 | `num_hands=1` (SYS-4); 0.6 / 0.5 / 0.5 (VIS-9) |
 | `time.time()` timestamps; frames not mirrored | Strictly increasing monotonic timestamps (VIS-8); mirrored frames (VIS-4) |

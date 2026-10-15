@@ -33,6 +33,7 @@ from agc.engine.automation import (
     Tier,
 )
 from agc.engine.automation.adapters.base import AppAdapter, GuiAdapter
+from agc.engine.automation.adapters.browser import BrowserAdapter, BrowserConfig
 from agc.engine.automation.adapters.gui_pyautogui import GuiAutomationAdapter
 from agc.engine.automation.adapters.word_com import WordAdapter, WordConfig
 
@@ -54,6 +55,7 @@ class Binding:
 
 WORD = ActionType.APP_API
 GUI = ActionType.GUI_MACRO
+GITHUB = "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"
 
 BINDINGS = [
     # Word over COM: works without focusing Word.
@@ -76,6 +78,9 @@ BINDINGS = [
     Binding("FLICK_L", "Browser: previous tab (macro)", GUI, "browser_prev_tab", needs_focus="your browser"),
     Binding("SCROLL_2F", "Scroll down 3 clicks", GUI, "scroll", args={"clicks": -3},
             needs_focus="the window to scroll", dedupe_key="scroll"),
+    # Browser (same action as the peace-sign binding in agc/profiles/word_workflow.yaml).
+    Binding("PEACE_HOLD", "Browser: open the project's GitHub page", WORD, "open_url", "chrome",
+            {"url": GITHUB}, timeout_s=30),
 ]
 BY_GESTURE = {b.gesture: b for b in BINDINGS}
 
@@ -100,6 +105,11 @@ class DryWord(_DryRun, AppAdapter):
     name = "dry-word"
 
 
+class DryBrowser(_DryRun, AppAdapter):
+    app = "chrome"
+    name = "dry-browser"
+
+
 class DryGui(_DryRun, GuiAdapter):
     name = "dry-gui"
 
@@ -108,7 +118,7 @@ class DryGui(_DryRun, GuiAdapter):
 
 
 class Tester:
-    def __init__(self, dry_run: bool, word_visible: bool, countdown: float) -> None:
+    def __init__(self, dry_run: bool, word_visible: bool, countdown: float, browser: str = "chrome") -> None:
         self.dry_run = dry_run
         self.countdown = countdown
         self.pending: dict[str, str] = {}
@@ -118,9 +128,11 @@ class Tester:
         self.dispatcher.set_result_callback(self.on_result)
         if dry_run:
             self.dispatcher.register_backend(Tier.APP_API, DryWord())
+            self.dispatcher.register_backend(Tier.APP_API, DryBrowser())
             self.dispatcher.register_backend(Tier.GUI, DryGui())
         else:
             self.dispatcher.register_backend(Tier.APP_API, WordAdapter(WordConfig(visible=word_visible)))
+            self.dispatcher.register_backend(Tier.APP_API, BrowserAdapter(BrowserConfig(browser=browser)))
             self.dispatcher.register_backend(Tier.GUI, GuiAutomationAdapter())
         self.dispatcher.start()
 
@@ -184,7 +196,7 @@ class Tester:
 def print_table() -> None:
     print(f"\n  {'#':>2}  {'GESTURE':<11} {'TIER':<8} ACTION")
     for i, b in enumerate(BINDINGS, 1):
-        tier = "word" if b.type is WORD else "gui"
+        tier = b.app or "gui"
         focus = f"   (click {b.needs_focus} first)" if b.needs_focus else ""
         print(f"  {i:>2}  {b.gesture:<11} {tier:<8} {b.label}{focus}")
     print()
@@ -225,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--delay", type=float, default=1.0, help="seconds between gestures with --run")
     parser.add_argument("--countdown", type=float, default=3, help="seconds to focus a window for GUI gestures")
     parser.add_argument("--hidden-word", action="store_true", help="run Word in the background (default: visible)")
+    parser.add_argument("--browser", choices=["chrome", "edge", "firefox", "default"], default="chrome",
+                        help="browser for PEACE_HOLD (default: chrome)")
     args = parser.parse_args(argv)
 
     if args.list:
@@ -237,7 +251,8 @@ def main(argv: list[str] | None = None) -> int:
 
     mode = "DRY RUN (nothing will really happen)" if args.dry_run else "LIVE (Word and keyboard/mouse are real)"
     print(f"Air Gesture Control - gesture tester [{mode}]")
-    tester = Tester(args.dry_run, word_visible=not args.hidden_word, countdown=args.countdown)
+    tester = Tester(args.dry_run, word_visible=not args.hidden_word, countdown=args.countdown,
+                    browser=args.browser)
     try:
         if args.run:
             for gesture in (g.strip() for g in args.run.split(",")):

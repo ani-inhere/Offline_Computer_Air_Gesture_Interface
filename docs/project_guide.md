@@ -26,7 +26,9 @@ What exists today:
 |---|---|
 | `Vision_test.py` | Webcam + MediaPipe prototype that draws hand landmarks (vision team) |
 | Automation backend `agc/engine/automation/` | **Built and tested** (phases 1–3) |
-| Gesture engine, FSM, mapper, profiles, HUD | Not built yet; `gesture_tester.py` stands in for them |
+| `agc/engine/gesture_bridge.py` + `agc/profiles/word_workflow.yaml` | Connects `Vision_test.py` gestures (TAP, DOUBLE_TAP, LONG_PINCH, PEACE_HOLD) to actions |
+| `agc/engine/gestures/static.py` | Peace-sign pose and hold detector ([browser_ops.md](browser_ops.md)) |
+| Full gesture engine, FSM, HUD | Not built yet; `gesture_tester.py` fires gestures by hand |
 
 ## 2. API keys
 
@@ -110,6 +112,7 @@ python gesture_tester.py --list
 | 11 | FLICK_R | gui | Browser next tab (macro) |
 | 12 | FLICK_L | gui | Browser previous tab (macro) |
 | 13 | SCROLL_2F | gui | Scroll down 3 clicks |
+| 14 | PEACE_HOLD | chrome | Open the project's GitHub page; `--browser edge` / `default` if Chrome isn't installed |
 
 These bindings are samples kept in `BINDINGS` at the top of `gesture_tester.py`; edit them freely. In Phase 4 they move into a profile YAML file.
 
@@ -161,6 +164,7 @@ Change the countdown with `--countdown 5`.
 | `--delay S` | Seconds between gestures with `--run` (default 1) |
 | `--countdown S` | Seconds to focus a window before GUI gestures (default 3) |
 | `--hidden-word` | Start Word in the background instead of visibly |
+| `--browser B` | Browser for PEACE_HOLD: `chrome` (default), `edge`, `firefox`, `default` |
 
 ## 5. How the code works
 
