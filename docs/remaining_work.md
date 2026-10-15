@@ -4,7 +4,7 @@ Status as of 15 Oct 2026. Phases 0–3 of the automation backend are complete (s
 
 Done since the first version of this list:
 - `agc/engine/gesture_bridge.py` and `agc/profiles/word_workflow.yaml` connect `Vision_test.py` gestures (TAP, DOUBLE_TAP, LONG_PINCH) to Word. This is a first version of the Phase 4 mapper and profile.
-- New PEACE_HOLD gesture opens a URL in Chrome ([browser_ops.md](browser_ops.md)).
+- New PEACE_HOLD gesture opens a URL in Microsoft Edge ([browser_ops.md](browser_ops.md)).
 - `Anii_part` merged into `main`.
 
 ## 1. Automation backend: remaining phases
@@ -81,7 +81,7 @@ Prompts for each phase are in [agc-automation-backend-flow-and-prompts.md](agc-a
 ## 3. Repository housekeeping
 
 - [x] **Sync the branches.** `Anii_part` was merged into `main` on 15 Oct 2026; `main` is now the branch to work on.
-- [ ] **Install Google Chrome**, or set `browser: edge` / `default` in the profile; the dev machine has no Chrome.
+- [x] **Browser:** switched to Microsoft Edge (installed with Windows); Chrome is only needed for the opt-in Selenium backend.
 - [ ] **Delete `tempCodeRunnerFile.py`** (a VS Code Code Runner leftover on `main`) and add it to `.gitignore`.
 - [ ] **Remove the duplicate flow doc** from the repo root; the copy in `docs/` is the one to keep.
 - [ ] **Install MediaPipe** on the dev machine (`pip install mediapipe`) to run `Vision_test.py`; Phase 5 needs it.

@@ -112,13 +112,13 @@ With `backend: auto`, the router tries OS, then app API, then GUI macro, and fal
 
 ### Open a web page with a gesture
 
-Hold a **peace sign** (index and middle finger up in a V) for half a second and AGC opens the project's GitHub page in a new Chrome tab. The link, browser (`chrome`, `edge`, `firefox` or `default`) and an opt-in Selenium backend are set in `agc/profiles/word_workflow.yaml`; see `docs/browser_ops.md`.
+Hold a **peace sign** (index and middle finger up in a V) for half a second and AGC opens the project's GitHub page in a new Microsoft Edge tab. The link, browser (`edge`, `chrome`, `firefox` or `default`) and an opt-in Selenium backend are set in `agc/profiles/word_workflow.yaml`; see `docs/browser_ops.md`.
 
 ```yaml
       - gesture: PEACE_HOLD
         action:
           type: app_api
-          app: chrome
+          app: browser
           op: open_url
           args: { url: "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface" }
 ```

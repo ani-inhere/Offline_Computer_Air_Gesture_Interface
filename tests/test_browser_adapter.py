@@ -15,10 +15,13 @@ from agc.engine.automation.adapters.browser import BrowserAdapter, BrowserConfig
 
 GITHUB = "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"
 CHROME = Path("C:/Program Files/Google/Chrome/Application/chrome.exe")
+EDGE = Path("C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe")
+FIREFOX = Path("C:/Program Files/Mozilla Firefox/firefox.exe")
+EXE = {"chrome": CHROME, "edge": EDGE, "firefox": FIREFOX}
 
 
 def run(adapter: BrowserAdapter, op: str = "open_url", token: CancelToken | None = None, **args):
-    request = make_request(op, type=ActionType.APP_API, app="chrome", args=args)
+    request = make_request(op, type=ActionType.APP_API, app="browser", args=args)
     result = adapter.execute(request, token or CancelToken())
     assert result.id == request.id
     return result
@@ -26,7 +29,7 @@ def run(adapter: BrowserAdapter, op: str = "open_url", token: CancelToken | None
 
 def direct(**config):
     launched: list[list[str]] = []
-    adapter = BrowserAdapter(BrowserConfig(**config), launcher=launched.append, finder=lambda name: CHROME)
+    adapter = BrowserAdapter(BrowserConfig(**config), launcher=launched.append, finder=EXE.get)
     return adapter, launched
 
 
@@ -64,11 +67,19 @@ def test_allowed_hosts_include_subdomains():
 # --------------------------------------------------------------- direct
 
 
-def test_open_url_launches_chrome_with_the_url_only():
+def test_default_browser_is_edge():
+    assert BrowserConfig().browser == "edge"
     adapter, launched = direct()
     result = run(adapter, url=GITHUB)
+    assert result.ok and result.message == "Opened github.com in Microsoft Edge"
+    assert result.data == {"url": GITHUB, "browser": "edge", "backend": "direct"}
+    assert launched == [[str(EDGE), GITHUB]]
+
+
+def test_open_url_launches_chrome_with_the_url_only():
+    adapter, launched = direct(browser="chrome")
+    result = run(adapter, url=GITHUB)
     assert result.ok and result.message == "Opened github.com in Google Chrome"
-    assert result.data == {"url": GITHUB, "browser": "chrome", "backend": "direct"}
     assert launched == [[str(CHROME), GITHUB]]
 
 
@@ -77,14 +88,16 @@ def test_open_url_launches_chrome_with_the_url_only():
 def test_new_window_flag_per_browser(browser, flag):
     adapter, launched = direct(browser=browser)
     assert run(adapter, url=GITHUB, new_window=True).ok
-    assert launched == [[str(CHROME), flag, GITHUB]]
+    assert launched == [[str(EXE[browser]), flag, GITHUB]]
 
 
-def test_missing_chrome_is_unavailable_with_a_hint():
-    adapter = BrowserAdapter(launcher=lambda argv: pytest.fail("must not launch"), finder=lambda name: None)
+@pytest.mark.parametrize("browser, name", [("edge", "Microsoft Edge"), ("chrome", "Google Chrome")])
+def test_missing_browser_is_unavailable_with_a_hint(browser, name):
+    adapter = BrowserAdapter(BrowserConfig(browser=browser), launcher=lambda argv: pytest.fail("must not launch"),
+                             finder=lambda name: None)
     result = run(adapter, url=GITHUB)
     assert result.status is Status.UNAVAILABLE
-    assert result.message.startswith("Google Chrome is not installed")
+    assert result.message.startswith(f"{name} is not installed")
     assert adapter.is_available()[0] is False
 
 
@@ -140,7 +153,7 @@ def test_cancelled_before_start():
 def test_status_and_unknown_op():
     adapter, _ = direct()
     status = run(adapter, "status")
-    assert status.ok and status.data["path"] == str(CHROME) and status.data["available"] is True
+    assert status.ok and status.data["path"] == str(EDGE) and status.data["available"] is True
     assert run(adapter, "close_all_tabs").status is Status.FAILED
 
 
@@ -226,7 +239,8 @@ def selenium_adapter(chromedriver: Path, **config):
         drivers.append(FakeDriver())
         return drivers[-1]
 
-    adapter = BrowserAdapter(BrowserConfig(backend="selenium", chromedriver_path=chromedriver, **config),
+    adapter = BrowserAdapter(BrowserConfig(browser="chrome", backend="selenium", chromedriver_path=chromedriver,
+                                           **config),
                              launcher=lambda argv: pytest.fail("direct launch must not run"),
                              finder=lambda name: CHROME, driver_factory=factory)
     return adapter, drivers, factory_args
@@ -256,7 +270,7 @@ def test_selenium_restarts_when_the_window_was_closed(chromedriver, isolated_env
 
 def test_selenium_per_request_backend_override(chromedriver, isolated_env):
     launched: list[list[str]] = []
-    adapter = BrowserAdapter(BrowserConfig(chromedriver_path=chromedriver), launcher=launched.append,
+    adapter = BrowserAdapter(BrowserConfig(browser="chrome", chromedriver_path=chromedriver), launcher=launched.append,
                              finder=lambda name: CHROME, driver_factory=lambda *a: FakeDriver())
     assert run(adapter, url=GITHUB, backend="selenium").data["backend"] == "selenium"
     assert launched == []
@@ -269,7 +283,7 @@ def test_selenium_per_request_backend_override(chromedriver, isolated_env):
     ({"browser": "edge"}, "supports browser: chrome only"),
 ])
 def test_selenium_setup_errors_are_unavailable(chromedriver, isolated_env, config, message):
-    settings = {"backend": "selenium", "chromedriver_path": chromedriver, **config}
+    settings = {"browser": "chrome", "backend": "selenium", "chromedriver_path": chromedriver, **config}
     adapter = BrowserAdapter(BrowserConfig(**settings), finder=lambda name: CHROME,
                              driver_factory=lambda *a: FakeDriver())
     result = run(adapter, url=GITHUB)
@@ -278,14 +292,15 @@ def test_selenium_setup_errors_are_unavailable(chromedriver, isolated_env, confi
 
 def test_selenium_not_installed(chromedriver, monkeypatch):
     monkeypatch.setattr(browser_mod.importlib.util, "find_spec", lambda name: None)
-    adapter = BrowserAdapter(BrowserConfig(backend="selenium", chromedriver_path=chromedriver),
+    adapter = BrowserAdapter(BrowserConfig(browser="chrome", backend="selenium", chromedriver_path=chromedriver),
                              finder=lambda name: CHROME)
     result = run(adapter, url=GITHUB)
     assert result.status is Status.UNAVAILABLE and "pip install selenium" in result.message
 
 
 def test_missing_chromedriver_file(tmp_path, isolated_env):
-    adapter = BrowserAdapter(BrowserConfig(backend="selenium", chromedriver_path=tmp_path / "none.exe"),
+    adapter = BrowserAdapter(BrowserConfig(browser="chrome", backend="selenium",
+                                           chromedriver_path=tmp_path / "none.exe"),
                              driver_factory=lambda *a: FakeDriver())
     result = run(adapter, url=GITHUB)
     assert result.status is Status.UNAVAILABLE and "does not exist" in result.message
@@ -306,7 +321,7 @@ def test_runs_on_the_app_worker_through_the_dispatcher(make_dispatcher, collecto
     d = make_dispatcher()
     d.register_backend(Tier.APP_API, BrowserAdapter(launcher=launched.append, finder=lambda name: CHROME))
     d.start()
-    job = d.submit(make_request("open_url", type=ActionType.APP_API, app="chrome", args={"url": GITHUB}))
+    job = d.submit(make_request("open_url", type=ActionType.APP_API, app="browser", args={"url": GITHUB}))
     result = collector.wait_for(job)
     assert result.ok and result.tier_used is Tier.APP_API
     assert launched == [[str(CHROME), GITHUB]]

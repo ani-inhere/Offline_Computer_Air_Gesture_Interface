@@ -112,7 +112,7 @@ python gesture_tester.py --list
 | 11 | FLICK_R | gui | Browser next tab (macro) |
 | 12 | FLICK_L | gui | Browser previous tab (macro) |
 | 13 | SCROLL_2F | gui | Scroll down 3 clicks |
-| 14 | PEACE_HOLD | chrome | Open the project's GitHub page; `--browser edge` / `default` if Chrome isn't installed |
+| 14 | PEACE_HOLD | browser | Open the project's GitHub page in Edge (`--browser chrome` / `firefox` / `default` to change) |
 
 These bindings are samples kept in `BINDINGS` at the top of `gesture_tester.py`; edit them freely. In Phase 4 they move into a profile YAML file.
 
@@ -164,7 +164,7 @@ Change the countdown with `--countdown 5`.
 | `--delay S` | Seconds between gestures with `--run` (default 1) |
 | `--countdown S` | Seconds to focus a window before GUI gestures (default 3) |
 | `--hidden-word` | Start Word in the background instead of visibly |
-| `--browser B` | Browser for PEACE_HOLD: `chrome` (default), `edge`, `firefox`, `default` |
+| `--browser B` | Browser for PEACE_HOLD: `edge` (default), `chrome`, `firefox`, `default` |
 
 ## 5. How the code works
 

@@ -79,7 +79,7 @@ BINDINGS = [
     Binding("SCROLL_2F", "Scroll down 3 clicks", GUI, "scroll", args={"clicks": -3},
             needs_focus="the window to scroll", dedupe_key="scroll"),
     # Browser (same action as the peace-sign binding in agc/profiles/word_workflow.yaml).
-    Binding("PEACE_HOLD", "Browser: open the project's GitHub page", WORD, "open_url", "chrome",
+    Binding("PEACE_HOLD", "Browser: open the project's GitHub page", WORD, "open_url", "browser",
             {"url": GITHUB}, timeout_s=30),
 ]
 BY_GESTURE = {b.gesture: b for b in BINDINGS}
@@ -106,7 +106,7 @@ class DryWord(_DryRun, AppAdapter):
 
 
 class DryBrowser(_DryRun, AppAdapter):
-    app = "chrome"
+    app = "browser"
     name = "dry-browser"
 
 
@@ -118,7 +118,7 @@ class DryGui(_DryRun, GuiAdapter):
 
 
 class Tester:
-    def __init__(self, dry_run: bool, word_visible: bool, countdown: float, browser: str = "chrome") -> None:
+    def __init__(self, dry_run: bool, word_visible: bool, countdown: float, browser: str = "edge") -> None:
         self.dry_run = dry_run
         self.countdown = countdown
         self.pending: dict[str, str] = {}
@@ -237,8 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--delay", type=float, default=1.0, help="seconds between gestures with --run")
     parser.add_argument("--countdown", type=float, default=3, help="seconds to focus a window for GUI gestures")
     parser.add_argument("--hidden-word", action="store_true", help="run Word in the background (default: visible)")
-    parser.add_argument("--browser", choices=["chrome", "edge", "firefox", "default"], default="chrome",
-                        help="browser for PEACE_HOLD (default: chrome)")
+    parser.add_argument("--browser", choices=["edge", "chrome", "firefox", "default"], default="edge",
+                        help="browser for PEACE_HOLD (default: edge)")
     args = parser.parse_args(argv)
 
     if args.list:

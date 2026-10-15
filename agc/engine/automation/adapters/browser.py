@@ -1,4 +1,4 @@
-"""Tier 2 adapter: open a URL in Chrome (or another browser).
+"""Tier 2 adapter: open a URL in a browser (Microsoft Edge by default; Chrome, Firefox or the system default).
 
 Ops (``request.args`` in brackets):
 
@@ -66,7 +66,7 @@ class BrowserConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    browser: BrowserName = "chrome"
+    browser: BrowserName = "edge"  # ships with Windows
     browser_path: Path | None = Field(None, description="Browser executable; found automatically if unset")
     backend: BackendName = "direct"
     new_window: bool = False
@@ -168,7 +168,7 @@ DriverFactory = Callable[[str, "str | None", bool], Any]
 class BrowserAdapter(AppAdapter):
     """Opens URLs in a browser. Runs on the app-API worker thread like the Word adapter."""
 
-    app = "chrome"
+    app = "browser"
     name = "browser"
     ops = frozenset({"open_url", "status"})
 

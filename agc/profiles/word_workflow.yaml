@@ -18,7 +18,7 @@ word:
 
 # BrowserConfig overrides (agc/engine/automation/adapters/browser.py).
 browser:
-  browser: chrome          # chrome | edge | firefox | default (the system default browser)
+  browser: edge            # edge | chrome | firefox | default (the system default browser)
   backend: direct          # direct = open in your normal browser; selenium = opt-in, see docs/browser_ops.md
   # chromedriver_path: C:/tools/chromedriver.exe    # required only for backend: selenium
 
@@ -50,7 +50,7 @@ profiles:
         cooldown_s: 3.0                            # one tab per peace sign, even if held
         action:
           type: app_api
-          app: chrome
+          app: browser
           op: open_url
           args: { url: "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface" }
-          timeout_s: 30                            # Selenium needs a few seconds to start Chrome
+          timeout_s: 30                            # Selenium (Chrome only) needs a few seconds to start

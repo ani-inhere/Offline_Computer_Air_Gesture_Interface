@@ -1,9 +1,9 @@
 # Browser ops: open a URL with a gesture
 
-Make a **peace sign** (index and middle finger up in a V, ring and pinky folded) and hold it for half a second. AGC opens the project's GitHub page in a new Chrome tab.
+Make a **peace sign** (index and middle finger up in a V, ring and pinky folded) and hold it for half a second. AGC opens the project's GitHub page in a new Microsoft Edge tab.
 
 ```
-Vision_test.py ──PEACE_HOLD──> gesture_bridge ──> profile: app chrome, op open_url ──> BrowserAdapter ──> chrome.exe <url>
+Vision_test.py ──PEACE_HOLD──> gesture_bridge ──> profile: app browser, op open_url ──> BrowserAdapter ──> msedge.exe <url>
 ```
 
 | Piece | File |
@@ -24,7 +24,7 @@ Edit the binding in `agc/profiles/word_workflow.yaml`:
         cooldown_s: 3.0
         action:
           type: app_api
-          app: chrome
+          app: browser
           op: open_url
           args: { url: "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface", new_window: false }
           timeout_s: 30
@@ -40,7 +40,7 @@ Edit the binding in `agc/profiles/word_workflow.yaml`:
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `browser` | `chrome` | `chrome`, `edge`, `firefox`, or `default` (whatever Windows opens links with) |
+| `browser` | `edge` | `edge`, `chrome`, `firefox`, or `default` (whatever Windows opens links with) |
 | `browser_path` | found automatically | Path to the browser executable, if it's somewhere unusual |
 | `backend` | `direct` | `direct` or `selenium` (see below) |
 | `new_window` | `false` | Default for `new_window` |
@@ -48,23 +48,24 @@ Edit the binding in `agc/profiles/word_workflow.yaml`:
 | `chromedriver_path` | — | Local chromedriver; required for `selenium` |
 | `selenium_keep_open` | `true` | Leave the Selenium window open when AGC exits |
 
-Chrome is found through the Windows "App Paths" registry entry, then the standard install folders, then `PATH`. If it isn't installed, the gesture reports `Google Chrome is not installed …` (UNAVAILABLE) instead of failing silently.
+The browser is found through the Windows "App Paths" registry entry, then the standard install folders, then `PATH`. Edge ships with Windows, so it is the default. If the chosen browser isn't installed, the gesture reports, for example, `Google Chrome is not installed …` (UNAVAILABLE) instead of failing silently.
 
 ## Backends
 
 ### `direct` (default, recommended)
 
-AGC starts `chrome.exe <url>` itself, with no shell, and returns immediately. Chrome opens the URL as a new tab in your normal window, with your logins and extensions. This needs no extra packages and AGC opens no network connection of its own, so it stays within the offline rules (PRD SYS-1, PRV-1).
+AGC starts `msedge.exe <url>` (or `chrome.exe` / `firefox.exe`) itself, with no shell, and returns immediately. The browser opens the URL as a new tab in your normal window, with your logins and extensions. This needs no extra packages and AGC opens no network connection of its own, so it stays within the offline rules (PRD SYS-1, PRV-1).
 
 ### `selenium` (opt-in)
 
-This drives Chrome through Selenium WebDriver. Setup:
+This drives Chrome through Selenium WebDriver. It's **Chrome only**, so Chrome must be installed. Setup:
 
 1. `pip install selenium` (or `pip install -e .[selenium]`).
 2. Download the chromedriver that matches your Chrome version from <https://googlechromelabs.github.io/chrome-for-testing/>, and unzip it, for example to `C:/tools/chromedriver.exe`.
 3. In the profile:
    ```yaml
    browser:
+     browser: chrome
      backend: selenium
      chromedriver_path: C:/tools/chromedriver.exe
    ```
@@ -83,7 +84,7 @@ Behavior:
 
 ## Safety
 
-- **Allowed schemes:** only `http` and `https`; `file:`, `javascript:` and `chrome://` are rejected. This also stops a "URL" like `--remote-debugging-port=9222` from being read as a Chrome command-line flag.
+- **Allowed schemes:** only `http` and `https`; `file:`, `javascript:` and `chrome://` are rejected. This also stops a "URL" like `--remote-debugging-port=9222` from being read as a browser command-line flag.
 - **Size and characters:** URLs are limited to 2048 characters, with no spaces or control characters.
 - **Hosts:** set `allowed_hosts` to restrict which sites gestures may open.
 - **Rate:** `cooldown_s: 3.0` plus a one-shot hold detector mean holding the pose opens one tab, not a stream of them.

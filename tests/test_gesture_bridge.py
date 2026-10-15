@@ -178,7 +178,8 @@ def test_shipped_word_profile_is_valid():
         ops = {b.gesture: b.action.op for b in config.profiles[0].bindings}
         assert ops == {"DOUBLE_TAP": "new_document", "TAP": "insert_text", "LONG_PINCH": "export_pdf"}
         peace = config.profiles[1].binding_for("PEACE_HOLD")
-        assert (peace.action.app, peace.action.op) == ("chrome", "open_url")
+        assert (peace.action.app, peace.action.op) == ("browser", "open_url")
+        assert config.browser["browser"] == "edge"
         assert peace.action.args["url"] == "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"
     finally:
         bridge.shutdown(timeout=1.0)
@@ -187,7 +188,7 @@ def test_shipped_word_profile_is_valid():
 def test_peace_hold_opens_the_bound_url(tmp_path, make_bridge):
     launched: list[list[str]] = []
     browser = BrowserAdapter(BrowserConfig(), launcher=launched.append,
-                             finder=lambda name: Path("C:/Chrome/chrome.exe"))
+                             finder=lambda name: Path("C:/Edge/msedge.exe"))
     status = StatusLines()
     bridge = GestureActionBridge(DEFAULT_PROFILE_PATH, adapters=[WordAdapter(), browser], probe=Probe(),
                                  on_status=status)
@@ -195,8 +196,8 @@ def test_peace_hold_opens_the_bound_url(tmp_path, make_bridge):
         bridge.start()
         assert bridge.on_gesture("PEACE_HOLD") is not None
         line = status.wait(1)[0]
-        assert line == "PEACE_HOLD -> chrome.open_url: OK - Opened github.com in Google Chrome"
-        assert launched == [[str(Path("C:/Chrome/chrome.exe")),
+        assert line == "PEACE_HOLD -> browser.open_url: OK - Opened github.com in Microsoft Edge"
+        assert launched == [[str(Path("C:/Edge/msedge.exe")),
                              "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"]]
     finally:
         bridge.shutdown(timeout=1.0)
@@ -210,7 +211,7 @@ def test_peace_hold_opens_the_bound_url(tmp_path, make_bridge):
 def test_bad_url_in_profile_is_rejected_at_load(tmp_path, url, message):
     path = tmp_path / "p.yaml"
     path.write_text("profiles:\n  - id: p\n    bindings:\n      - gesture: PEACE_HOLD\n"
-                    f"        action: {{ type: app_api, app: chrome, op: open_url, args: {{ url: '{url}' }} }}\n",
+                    f"        action: {{ type: app_api, app: browser, op: open_url, args: {{ url: '{url}' }} }}\n",
                     encoding="utf-8")
     with pytest.raises(ValueError, match=f"gesture 'PEACE_HOLD': {message}"):
         GestureActionBridge(path, adapters=[BrowserAdapter()], probe=Probe())
