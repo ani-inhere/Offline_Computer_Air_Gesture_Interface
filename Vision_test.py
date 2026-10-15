@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import time  
 import math  
+import atexit
 
 base_options = mp.tasks.BaseOptions(model_asset_path='hand_landmarker.task')
 
@@ -22,11 +23,36 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 print("Starting Optimized Tracker... Press 'q' to exit.")
+
+# Gesture -> Word bridge (agc/engine/gesture_bridge.py; bindings in agc/profiles/word_workflow.yaml).
+# Word runs on its own worker thread: the loop only calls bridge.on_gesture(), which never blocks.
+try:
+    from agc.engine.gesture_bridge import GestureActionBridge
+except ImportError as exc:  # automation deps (pydantic, PyYAML, pywin32) not installed
+    print(f"Automation disabled ({exc}); gestures will only be printed.")
+    bridge = None
+else:
+    bridge = GestureActionBridge(on_status=lambda line: print(f"    [action] {line}"))
+    bridge.start()
+    atexit.register(bridge.shutdown)
+
+TAP_MAX_MS = 300       # pinch released within this -> a tap
+DOUBLE_TAP_MS = 500    # second tap within this of the first -> DOUBLE_TAP
+LONG_PINCH_MS = 800    # pinch held this long -> LONG_PINCH
+
+
+def emit_gesture(name):
+    print(f'*** {name} detected! ***')
+    if bridge is not None:
+        bridge.on_gesture(name)
+
+
 is_pinched = False
 pinch_frames = 0
 pinch_start_time = 0
 last_tap_time = 0
 tap_count = 0
+long_pinch_fired = False
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -64,25 +90,37 @@ while cap.isOpened():
         if pinch_frames >= 2 and not is_pinched:
             is_pinched = True
             pinch_start_time = timestamp_ms
+            long_pinch_fired = False
+        # LONG_PINCH fires once while the pinch is still held, and cancels any pending tap.
+        if is_pinched and not long_pinch_fired and (timestamp_ms - pinch_start_time) >= LONG_PINCH_MS:
+            long_pinch_fired = True
+            tap_count = 0
+            emit_gesture("LONG_PINCH")
         if pinch_ratio > 0.40:
-            if is_pinched and (timestamp_ms - pinch_start_time) <= 300:
-                if (timestamp_ms - last_tap_time) <= 500: 
-                    tap_count += 1
+            if is_pinched and not long_pinch_fired and (timestamp_ms - pinch_start_time) <= TAP_MAX_MS:
+                if tap_count == 1 and (timestamp_ms - last_tap_time) <= DOUBLE_TAP_MS:
+                    tap_count = 0
+                    emit_gesture("DOUBLE_TAP")
                 else:
                     tap_count = 1
-                
-                last_tap_time = timestamp_ms
-                
-                if tap_count == 2:
-                    print('*** DOUBLE TAP detected! ***')
-                    tap_count = 0  
-                else:
-                    print('*** TAP detected! ***')
+                    last_tap_time = timestamp_ms
                     
             is_pinched = False
             pinch_frames = 0
 
         # print(f"Pinch Ratio: {pinch_ratio:.4f}  (d_pinch={d_pinch:.4f}, s={s:.4f})")
+    else:
+        # Hand lost: drop a half-finished pinch so it can't turn into a LONG_PINCH later.
+        is_pinched = False
+        pinch_frames = 0
+
+    # A tap only counts as TAP once the double-tap window has passed without a second tap.
+    if tap_count == 1 and (timestamp_ms - last_tap_time) > DOUBLE_TAP_MS:
+        tap_count = 0
+        emit_gesture("TAP")
+
+    if bridge is not None:
+        cv2.putText(frame, bridge.status[:70], (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
 
     cv2.imshow("Offline Hand Tracking", frame)
 
