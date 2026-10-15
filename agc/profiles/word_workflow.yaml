@@ -4,9 +4,10 @@
 #   TAP         quick thumb-index pinch and release (<= 300 ms)
 #   DOUBLE_TAP  two taps within 500 ms
 #   LONG_PINCH  pinch held for 800 ms
+#   PEACE_HOLD  peace sign (index + middle up in a V, ring + pinky folded) held 500 ms
 #
 # `action` fields are ActionRequest fields (agc/engine/automation/models.py).
-# Word ops and their args are listed in docs/word_ops.md.
+# Word ops and their args are listed in docs/word_ops.md; browser ops in docs/browser_ops.md.
 #
 # Profile resolution: a profile with `match: { process: [...] }` wins while that
 # app is in the foreground; otherwise the profile without `match` is used.
@@ -14,6 +15,12 @@
 # WordConfig overrides (agc/engine/automation/adapters/word_com.py).
 word:
   visible: true            # show a Word window that AGC starts itself, so you can see each gesture land
+
+# BrowserConfig overrides (agc/engine/automation/adapters/browser.py).
+browser:
+  browser: chrome          # chrome | edge | firefox | default (the system default browser)
+  backend: direct          # direct = open in your normal browser; selenium = opt-in, see docs/browser_ops.md
+  # chromedriver_path: C:/tools/chromedriver.exe    # required only for backend: selenium
 
 profiles:
   - id: word_workflow
@@ -37,3 +44,13 @@ profiles:
           args: { name_template: "agc_{timestamp}" }   # written to ~/Documents/AGC, never overwrites
           timeout_s: 30
 
+  - id: browser_shortcuts
+    bindings:
+      - gesture: PEACE_HOLD
+        cooldown_s: 3.0                            # one tab per peace sign, even if held
+        action:
+          type: app_api
+          app: chrome
+          op: open_url
+          args: { url: "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface" }
+          timeout_s: 30                            # Selenium needs a few seconds to start Chrome

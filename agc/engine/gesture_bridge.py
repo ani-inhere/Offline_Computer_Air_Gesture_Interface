@@ -90,6 +90,7 @@ class ProfileFile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     word: dict[str, Any] = Field(default_factory=dict, description="WordConfig overrides")
+    browser: dict[str, Any] = Field(default_factory=dict, description="BrowserConfig overrides")
     profiles: list[Profile] = Field(min_length=1)
 
 
@@ -103,16 +104,20 @@ def load_profile_file(path: str | Path) -> ProfileFile:
         raise ValueError(f"invalid profile file {path}: {exc}") from exc
 
 
-def default_adapters(word_overrides: dict[str, Any] | None = None) -> list[BaseAdapter]:
-    """The production adapters: Word over COM (Tier 2) and PyAutoGUI (Tier 3).
+def default_adapters(word_overrides: dict[str, Any] | None = None,
+                     browser_overrides: dict[str, Any] | None = None) -> list[BaseAdapter]:
+    """The production adapters: Word over COM and the browser (Tier 2), PyAutoGUI (Tier 3).
 
-    Both import their platform libraries lazily and report themselves unavailable
-    when pywin32 / PyAutoGUI / Word are missing.
+    All import their platform libraries lazily and report themselves unavailable
+    when pywin32 / PyAutoGUI / Word / the browser are missing.
     """
+    from .automation.adapters.browser import BrowserAdapter, BrowserConfig
     from .automation.adapters.gui_pyautogui import GuiAutomationAdapter
     from .automation.adapters.word_com import WordAdapter, WordConfig
 
-    return [WordAdapter(WordConfig(**(word_overrides or {}))), GuiAutomationAdapter()]
+    return [WordAdapter(WordConfig(**(word_overrides or {}))),
+            BrowserAdapter(BrowserConfig(**(browser_overrides or {}))),
+            GuiAutomationAdapter()]
 
 
 # ------------------------------------------------------------------------ bridge
@@ -143,7 +148,7 @@ class GestureActionBridge:
     ) -> None:
         self.profile_path = Path(profile_path)
         self.config = load_profile_file(self.profile_path)
-        self._adapters = list(adapters) if adapters is not None else default_adapters(self.config.word)
+        self._adapters = list(adapters) if adapters is not None else default_adapters(self.config.word, self.config.browser)
         self._validate_bindings()
         self._dispatcher = dispatcher or ActionDispatcher()
         self._dispatcher.set_result_callback(self._on_result)
@@ -259,6 +264,12 @@ class GestureActionBridge:
                 ops = getattr(adapter, "ops", None)
                 if ops and action.op not in ops:
                     raise ValueError(f"{where}: {action.app} has no op {action.op!r} (known: {', '.join(sorted(ops))})")
+                validate_args = getattr(adapter, "validate_args", None)  # e.g. the browser checks the URL
+                if validate_args is not None:
+                    try:
+                        validate_args(action.op, action.args)
+                    except ValueError as exc:
+                        raise ValueError(f"{where}: {exc}") from None
 
     def _on_result(self, result: ActionResult) -> None:
         """Dispatcher notifier thread: record the outcome for the HUD."""

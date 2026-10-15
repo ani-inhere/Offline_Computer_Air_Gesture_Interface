@@ -110,6 +110,19 @@ Action types: `media`, `hotkey`, `key_hold`, `momentary_toggle`, `hold_key_and_d
 
 With `backend: auto`, the router tries OS, then app API, then GUI macro, and falls back to a GUI macro only when the action declares `gui_fallback`.
 
+### Open a web page with a gesture
+
+Hold a **peace sign** (index and middle finger up in a V) for half a second and AGC opens the project's GitHub page in a new Chrome tab. The link, browser (`chrome`, `edge`, `firefox` or `default`) and an opt-in Selenium backend are set in `agc/profiles/word_workflow.yaml`; see `docs/browser_ops.md`.
+
+```yaml
+      - gesture: PEACE_HOLD
+        action:
+          type: app_api
+          app: chrome
+          op: open_url
+          args: { url: "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface" }
+```
+
 ## Requirements
 
 - Python 3.10-3.12 (check the MediaPipe wheel support for your platform)
@@ -146,7 +159,7 @@ agc/
 │  ├─ executor/        keyboard, mouse, media, audio, display adapters
 │  └─ automation/ 🚧
 │     ├─ models.py  dispatcher.py  workers.py  router.py  macros.py  locator.py
-│     └─ adapters/     base.py  word_com.py  gui_pyautogui.py
+│     └─ adapters/     base.py  word_com.py  browser.py  gui_pyautogui.py
 ├─ shell/              hud.py  tray.py  settings.py  ipc.py
 ├─ models/             bundled .tflite + hashes
 ├─ profiles/           shipped default profiles (incl. word_workflow.yaml 🚧)
@@ -229,6 +242,7 @@ python -m agc.tools.replay <trace.json>  # replay a recorded landmark trace
 - `docs/air-gesture-control-prd-trd-architecture.md`: product requirements, technical requirements, stack architecture
 - `docs/automation_backend.md` 🚧: threading rules, adding adapters and macros
 - `docs/word_ops.md` 🚧: Word operations mapped to VBA object-model calls
+- `docs/browser_ops.md`: the peace-sign gesture that opens a URL, browser settings, opt-in Selenium backend
 
 ## License
 

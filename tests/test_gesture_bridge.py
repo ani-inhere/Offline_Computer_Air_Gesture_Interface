@@ -9,6 +9,7 @@ import pytest
 from fakes import FakeAppAdapter
 
 from agc.engine.automation import ActionType, Status
+from agc.engine.automation.adapters.browser import BrowserAdapter, BrowserConfig
 from agc.engine.automation.adapters.word_com import WordAdapter, WordConfig
 from agc.engine.automation.interfaces import ForegroundInfo
 from agc.engine.gesture_bridge import DEFAULT_PROFILE_PATH, GestureActionBridge, load_profile_file
@@ -170,11 +171,47 @@ def test_invalid_yaml_schema_names_the_file(tmp_path):
 
 def test_shipped_word_profile_is_valid():
     config = load_profile_file(DEFAULT_PROFILE_PATH)
-    bridge = GestureActionBridge(adapters=[WordAdapter(WordConfig(**config.word))], probe=Probe())
+    adapters = [WordAdapter(WordConfig(**config.word)), BrowserAdapter(BrowserConfig(**config.browser))]
+    bridge = GestureActionBridge(adapters=adapters, probe=Probe())
     try:
-        assert bridge.gestures == ["DOUBLE_TAP", "LONG_PINCH", "TAP"]
+        assert bridge.gestures == ["DOUBLE_TAP", "LONG_PINCH", "PEACE_HOLD", "TAP"]
         ops = {b.gesture: b.action.op for b in config.profiles[0].bindings}
         assert ops == {"DOUBLE_TAP": "new_document", "TAP": "insert_text", "LONG_PINCH": "export_pdf"}
+        peace = config.profiles[1].binding_for("PEACE_HOLD")
+        assert (peace.action.app, peace.action.op) == ("chrome", "open_url")
+        assert peace.action.args["url"] == "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"
     finally:
         bridge.shutdown(timeout=1.0)
+
+
+def test_peace_hold_opens_the_bound_url(tmp_path, make_bridge):
+    launched: list[list[str]] = []
+    browser = BrowserAdapter(BrowserConfig(), launcher=launched.append,
+                             finder=lambda name: Path("C:/Chrome/chrome.exe"))
+    status = StatusLines()
+    bridge = GestureActionBridge(DEFAULT_PROFILE_PATH, adapters=[WordAdapter(), browser], probe=Probe(),
+                                 on_status=status)
+    try:
+        bridge.start()
+        assert bridge.on_gesture("PEACE_HOLD") is not None
+        line = status.wait(1)[0]
+        assert line == "PEACE_HOLD -> chrome.open_url: OK - Opened github.com in Google Chrome"
+        assert launched == [[str(Path("C:/Chrome/chrome.exe")),
+                             "https://github.com/ani-inhere/Offline_Computer_Air_Gesture_Interface"]]
+    finally:
+        bridge.shutdown(timeout=1.0)
+
+
+@pytest.mark.parametrize("url, message", [
+    ("javascript:alert(1)", "only http:// and https://"),
+    ("--remote-debugging-port=9222", "only http:// and https://"),
+    ("https://", "url has no host name"),
+])
+def test_bad_url_in_profile_is_rejected_at_load(tmp_path, url, message):
+    path = tmp_path / "p.yaml"
+    path.write_text("profiles:\n  - id: p\n    bindings:\n      - gesture: PEACE_HOLD\n"
+                    f"        action: {{ type: app_api, app: chrome, op: open_url, args: {{ url: '{url}' }} }}\n",
+                    encoding="utf-8")
+    with pytest.raises(ValueError, match=f"gesture 'PEACE_HOLD': {message}"):
+        GestureActionBridge(path, adapters=[BrowserAdapter()], probe=Probe())
 

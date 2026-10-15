@@ -17,6 +17,8 @@ windows = ["pywin32>=306; sys_platform == 'win32'"]
 gui = ["PyAutoGUI>=0.9.54", "opencv-python>=4.8"]
 vision = ["mediapipe>=0.10", "opencv-python>=4.8", "numpy>=1.24"]
 dev = ["pytest>=7.4", "hypothesis>=6.90"]
+# Opt-in browser backend (docs/browser_ops.md); the default "direct" backend needs nothing extra.
+selenium = ["selenium>=4.11"]
 
 [tool.setuptools.packages.find]
 include = ["agc*"]

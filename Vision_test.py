@@ -39,6 +39,11 @@ else:
 TAP_MAX_MS = 300       # pinch released within this -> a tap
 DOUBLE_TAP_MS = 500    # second tap within this of the first -> DOUBLE_TAP
 LONG_PINCH_MS = 800    # pinch held this long -> LONG_PINCH
+PEACE_HOLD_MS = 500    # peace sign (index + middle up in a V) held this long -> PEACE_HOLD
+
+# Static pose detector (agc/engine/gestures/static.py): fires once per hold, re-arms after the pose is released.
+from agc.engine.gestures.static import PoseHoldDetector, is_peace_pose
+peace_detector = PoseHoldDetector("PEACE_HOLD", is_peace_pose, hold_ms=PEACE_HOLD_MS)
 
 
 def emit_gesture(name):
@@ -113,6 +118,11 @@ while cap.isOpened():
         # Hand lost: drop a half-finished pinch so it can't turn into a LONG_PINCH later.
         is_pinched = False
         pinch_frames = 0
+
+    # Peace sign held PEACE_HOLD_MS -> PEACE_HOLD (bound to opening a browser tab in the profile).
+    hand_points = [(p.x, p.y) for p in results.hand_landmarks[0]] if results.hand_landmarks else None
+    if peace_detector.update(hand_points, timestamp_ms):
+        emit_gesture("PEACE_HOLD")
 
     # A tap only counts as TAP once the double-tap window has passed without a second tap.
     if tap_count == 1 and (timestamp_ms - last_tap_time) > DOUBLE_TAP_MS:
