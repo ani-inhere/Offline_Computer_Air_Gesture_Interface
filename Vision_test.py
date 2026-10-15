@@ -3,8 +3,11 @@ import mediapipe as mp
 import time  
 import math  
 import atexit
+from pathlib import Path
 
-base_options = mp.tasks.BaseOptions(model_asset_path='hand_landmarker.task')
+# Next to this script, so it works from any working directory (e.g. VS Code's Run button).
+MODEL_PATH = Path(__file__).resolve().parent / 'hand_landmarker.task'
+base_options = mp.tasks.BaseOptions(model_asset_path=str(MODEL_PATH))
 
 counter = 0
 
@@ -139,3 +142,4 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
+detector.close()  # avoids MediaPipe's 'NoneType object is not callable' traceback at exit
